@@ -57,7 +57,7 @@ def main(dataset: str, arch_id: str, loss: str, opt: str, lr: float, max_steps: 
 
         print(f"{step}\t{train_loss[step]:.3f}\t{train_acc[step]:.3f}\t{test_loss[step]:.3f}\t{test_acc[step]:.3f}")
 
-        if (loss_goal != None and train_loss[step] < loss_goal) or (acc_goal != None and train_acc[step] > acc_goal):
+        if (loss_goal != None and train_loss[step] < loss_goal) or (acc_goal != None and train_acc[step] > acc_goal) or (abs(train_loss[step]) == float("inf")) or (not train_loss[step] > 0) or (not 0 <= train_acc[step] <= 1) or (abs(test_loss[step]) == float("inf")) or (not test_loss[step] > 0) or (not 0 <= test_acc[step] <= 1):
             break
 
         optimizer.zero_grad()

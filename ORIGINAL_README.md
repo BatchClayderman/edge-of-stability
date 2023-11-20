@@ -1,11 +1,5 @@
 ## Gradient Descent on Neural Networks Typically Occurs at the Edge of Stability
 
-Run `autoTest.py` to start testing automatically. This will walk through all the parameters and draw the related figures for the manuscript. 
-
-Line 60 of ``gd.py`` is modified to automatically break down inf or nan. 
-
-This repository is forked from [https://github.com/locuslab/edge-of-stability](https://github.com/locuslab/edge-of-stability). 
-
 This repository contains source code for the ICLR 2021 paper [Gradient Descent on Neural Networks Typically Occurs
 at the Edge of Stability](https://openreview.net/forum?id=jh-rTtvkGeM) by Jeremy Cohen, Simran Kaur, Yuanzhi Li, Zico Kolter, and Ameet Talwalkar.
 
@@ -18,13 +12,11 @@ The structure of this README is:
 
 ### Preliminaries
 
-To run the code, you need to set three environment variables at the beginning of the script:
+To run the code, you need to set two environment variables:
 1. Set the `DATASETS` environment variable to a directory where datasets will be stored.
- For example: `os.environ["DATASET"] = "/my/directory/datasets"`.
+ For example: `export DATASET="/my/directory/datasets"`.
 2. Set the `RESULTS` environment variable to a directory where results will be stored.
- For example: `os.environ["RESULTS"] = "/my/directory/results"`.
-3. Set the `FIGURES` environment variable to a directory where figures will be stored.
- For example: `os.environ["FIGURES"] = "/my/directory/figures"`.
+ For example: `export RESULTS="/my/directory/results"`.
 
 ### Quick start
 
@@ -59,6 +51,43 @@ Within this output directory, the following files will be created, each containi
  losses and accuracies, recorded at each iteration
  - `eigs_final`: the top 2 eigenvalues, measured every 50 (`eig_freq`) iterations.
 
+The following matplotlib code will plot the train loss, train accuracy, and sharpness.
+```python
+import torch
+import matplotlib.pyplot as plt
+from os import environ
+
+dataset = "cifar10-5k"
+arch = "fc-tanh"
+loss = "mse"
+gd_lr = 0.01
+gd_eig_freq = 50
+
+gd_directory = f"{environ['RESULTS']}/{dataset}/{arch}/seed_0/{loss}/gd/lr_{gd_lr}"
+
+gd_train_loss = torch.load(f"{gd_directory}/train_loss_final")
+gd_train_acc = torch.load(f"{gd_directory}/train_acc_final")
+gd_sharpness = torch.load(f"{gd_directory}/eigs_final")[:,0]
+
+plt.figure(figsize=(5, 5), dpi=100)
+
+plt.subplot(3, 1, 1)
+plt.plot(gd_train_loss)
+plt.title("train loss")
+
+plt.subplot(3, 1, 2)
+plt.plot(gd_train_acc)
+plt.title("train accuracy")
+
+plt.subplot(3, 1, 3)
+plt.scatter(torch.arange(len(gd_sharpness)) * gd_eig_freq, gd_sharpness, s=5)
+plt.axhline(2. / gd_lr, linestyle='dotted')
+plt.title("sharpness")
+plt.xlabel("iteration")
+```
+
+![demo](figures/demo1.png)
+
 #### Gradient flow
 
 The script `flow.py` trains a neural network using gradient flow --- that is, by using the Runge-Kutta
@@ -76,7 +105,39 @@ Here, the argument ``tick = 1.0`` means that the train/test losses and accuracie
 and the argument `max_time  = 1000` means that training will stop after a maximum of 1000 units of time (or until the train accuracy reaches the `acc_goal` of 0.99).
 The other flags mean the same thing as in the `gd.py` example above.
 
-See the detailed `flow.py` documentation below for details on how the Runge Kutta step size is set. 
+See the detailed `flow.py` documentation below for details on how the Runge Kutta step size is set.
+
+The following matplotlib code will plot the train loss, train accuracy, and sharpness:
+
+```python
+flow_tick = 1.0
+flow_eig_freq = 1
+
+flow_directory = f"{environ['RESULTS'] }/{dataset}/{arch}/seed_0/{loss}/flow/tick_{flow_tick}"
+
+flow_train_loss = torch.load(f"{flow_directory}/train_loss_final")
+flow_train_acc = torch.load(f"{flow_directory}/train_acc_final")
+flow_sharpness = torch.load(f"{flow_directory}/eigs_final")[:, 0]
+
+plt.figure(figsize=(5, 5), dpi=100)
+
+plt.subplot(3, 1, 1)
+plt.plot(torch.arange(len(flow_train_loss)) * flow_tick, flow_train_loss)
+plt.title("train loss")
+
+plt.subplot(3, 1, 2)
+plt.plot(torch.arange(len(flow_train_acc)) * flow_tick, flow_train_acc)
+plt.title("train accuracy")
+
+plt.subplot(3, 1, 3)
+plt.scatter(torch.arange(len(flow_sharpness)) * flow_tick * flow_eig_freq, flow_sharpness, s=5)
+plt.title("sharpness")
+plt.xlabel("time")
+```
+
+![demo](figures/demo2.png)
+
+ 
  
 #### Comparing gradient descent to gradient flow
 
@@ -98,6 +159,38 @@ Thus, for both gradient descent and gradient flow, we're saving (random projecti
 Therefore, we can directly compare these saved iterates in order to assess whether gradient descent follows the same
 trajectory as gradient flow.
  
+ The following matplotlib code plots the distance between the gradient descent trajectory and the gradient flow trajectory: 
+
+```python
+gd_iterate_freq = 50
+flow_iterate_freq = 1
+
+# the GD iterates are saved every "gd_lr * gd_iterate_freq" units of time.
+# the GF iterates are saved every "flow_tick * flow_iterate_freq" units of time.
+# to directly compare the trajectories, these two quantities should be equal.
+assert gd_lr * gd_iterate_freq == flow_tick * flow_iterate_freq
+
+gd_iterates = torch.load(f"{gd_directory}/iterates_final")
+flow_iterates = torch.load(f"{flow_directory}/iterates_final")
+length = min(len(gd_iterates), len(flow_iterates))
+
+times = torch.arange(length) * flow_tick * flow_iterate_freq
+distance = (gd_iterates[:length, :] - flow_iterates[:length, :]).norm(dim=1)
+
+# the time at which the gradient descent sharpness first crosses the threshold (2  / gd_lr)
+cross_threshold_time = (gd_sharpness > (2 / gd_lr)).nonzero()[0][0] * gd_lr * gd_iterate_freq
+
+plt.figure(figsize=(5, 2), dpi=100)
+plt.scatter(times, distance)
+plt.axvline(cross_threshold_time, linestyle='dotted')
+plt.ylim((0, plt.ylim()[1]))
+plt.title("distance betwen gradient descent and gradient flow")
+plt.xlabel("time")
+plt.ylabel("distance")
+
+```
+![demo](figures/demo3.png)
+
 The dotted vertical line marks the iteration when the gradient descent sharpness crosses the gradient descent stability threshold 2 / 0.01.
 We can see that the gradient descent trajectory approximately tracks the gradient flow
  trajectory before this time, but departs immediately afterwards.
@@ -166,6 +259,7 @@ size (obtained by choosing the first `abridged_size` examples in the training da
 The script `src/flow.py` trains a network using gradient flow, i.e. by using the Runge-Kutta 
 algorithm to numerically integrate the gradient flow ODE.
 
+ 
 The Runge-Kutta algorithm requires a step size parameter.
 Similar to gradient descent, for Runge-Kutta to be stable 
 this step size must be small in regions where the sharpness is high.
@@ -205,3 +299,4 @@ The optional parameters of `src/flow.py` are:
 - `save_freq` [int, defaults to -1]: see above
 - `abridged_size` [int, defaults to 5000]: see above
 - `save_model` [bool, defaults to False]: see above
+

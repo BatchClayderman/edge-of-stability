@@ -1,10 +1,12 @@
 ## Gradient Descent on Neural Networks Typically Occurs at the Edge of Stability
 
-Run `autoTest.py` to start testing automatically. This will walk through all the parameters and draw the related figures for the manuscript. 
+Set `mal` to `False` and run `autoTest.py` to start testing edge of stability automatically. This will walk through all the parameters and draw the related figures for the manuscript. 
 
 If you want to generate the malicious image datasets again, please run `cifar10-to-png.py` and `addMalicious.py` accordingly. 
 
-Line 60 of ``gd.py`` is modified to automatically break down inf or nan. 
+Set `mal` to `True` and run `autoTest.py` again to classify different image malicious information hiding approaches. 
+
+Line 60 of ``gd.py`` is modified to automatically break down inf or nan. The script ``mal_gd.py`` is modified to load datasets containing malicious information. 
 
 This repository is forked from [https://github.com/locuslab/edge-of-stability](https://github.com/locuslab/edge-of-stability). 
 

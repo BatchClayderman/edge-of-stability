@@ -1,7 +1,7 @@
 import os
 from sys import exit
 from shutil import rmtree
-from random import randint
+from random import randint, shuffle
 try:
 	from cv2 import imread, imwrite
 except:
@@ -28,13 +28,35 @@ ncols = 100
 
 def add_mal(inputFilepath, outputFilepath, shellcode_type) -> bool:
 	arr = imread(inputFilepath)
-	flat = arr.flatten()
-	shellcode = shellcodes[shellcode_type % len(shellcodes)]
-	if len(shellcode) > len(flat):
+	if arr is None:
 		return False
-	seed = randint(0, len(flat) - len(shellcode) - 1)
-	flat[seed:seed + len(shellcode)] = [ord(ch) for ch in shellcode]
-	arr = flat.reshape(arr.shape)
+	if shellcode_type in (1, 2, 3):
+		flat = arr.flatten()
+		shellcode = shellcodes[shellcode_type % len(shellcodes)]
+		if len(shellcode) > len(flat):
+			return False
+		if 1 == shellcode_type:
+			seed = randint(0, len(flat) - len(shellcode) - 1)
+			seeds = list(range(seed, seed + len(shellcode)))
+		elif 2 == shellcode_type:
+			seeds = list(range(len(flat)))
+			shuffle(seeds)
+			seeds = sorted(seeds[:len(shellcode)])
+		else:
+			seeds = list(range(len(flat)))
+			shuffle(seeds)
+			seeds = seeds[:len(shellcode)]
+		for i, seed in enumerate(seeds):
+			flat[seed] = ord(shellcode[i]) % 256
+		arr = flat.reshape(arr.shape)
+	elif shellcode_type in (4, 5, 6):
+		flat = arr.reshape(arr.shape[0] * arr.shape[1], arr.shape[2])
+		shellcode = shellcodes[shellcode_type % len(shellcodes)]
+		if len(shellcode) > len(flat):
+			return False
+		seed = randint(0, len(flat) - len(shellcode) - 1)
+		flat[seed:seed + len(shellcode), shellcode_type - 4] = [ord(ch) % 256 for ch in shellcode]
+		arr = flat.reshape(arr.shape)	
 	outputFolder = os.path.split(outputFilepath)[0]
 	if os.path.exists(outputFolder):
 		if os.path.isdir(outputFolder):

@@ -1,11 +1,11 @@
 ## Gradient Descent on Neural Networks Typically Occurs at the Edge of Stability
 
-Run `autoTest.py` to start testing edge of stability automatically. This will walk through all the parameters and draw the related figures for the manuscript. 
+Run `autoTest.py` to start testing the edge of stability automatically. This will walk through all the parameters and draw the related figures for the manuscript. 
 
-If you want to generate the malicious image datasets and test, please follow the following steps. 
+If you want to generate the malicious image datasets and perform distributions, please follow the following steps. 
 
 1. Set `mal` to `False` and run `exAutoTest.py` to download datasets automatically if it is necessary. 
-2. If you want to generate the malicious image datasets, please run `cifar10-to-png.py` and `addMalicious.py` subsequently. 
+2. Run `cifar10-to-png.py` to extract PNG files and run `addMalicious.py` subsequently to hide malicious information. 
 3. Set `mal` to `True` and run `exAutoTest.py` again to classify different image malicious information hiding approaches. 
 
 Line 60 of ``gd.py`` is modified to automatically break down inf or nan. The script ``mal_gd.py`` is modified to load datasets containing malicious information. 

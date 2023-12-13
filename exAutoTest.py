@@ -14,10 +14,19 @@ os.chdir(os.path.abspath(os.path.dirname(__file__)))
 EXIT_SUCCESS = 0
 EXIT_FAILURE = 1
 EOF = (-1)
-os.environ["DATASETS"] = "datasets"
-os.environ["RESULTS"] = "results"
-os.environ["FIGURES"] = "figures"
-gdFilepath = "src/gd.py"
+mal = True
+if mal:
+	os.environ["DATASETS"] = "mal_datasets"
+	os.environ["RESULTS"] = "mal_results"
+	os.environ["FIGURES"] = "mal_figures"
+	gdFilepath = "src/mal_gd.py"
+	train_path = "mal_datasets/mal_train"
+	test_path = "mal_datasets/mal_test"
+else:
+	os.environ["DATASETS"] = "datasets"
+	os.environ["RESULTS"] = "results"
+	os.environ["FIGURES"] = "figures"
+	gdFilepath = "src/gd.py"
 flowFilepath = "src/flow.py"
 datasets = ["cifar10-5k"]
 archs = [									\
@@ -95,12 +104,12 @@ def test() -> None:
 					gd_directory = "{0}/{1}/{2}/seed_0/{3}/gd/lr_{4}".format(os.environ["RESULTS"], dataset, arch, loss, gd_lr)
 					if not os.path.isdir(gd_directory) or not os.path.isfile(os.path.join(gd_directory, "train_loss_final")) or not os.path.isfile(os.path.join(gd_directory, "train_acc_final")) or not os.path.isfile(os.path.join(gd_directory, "eigs_final")):
 						if isLog:
-							print("python \"{0}\" {1} {2} {3} {4} {5} --acc_goal {6} --neigs {7} --eig_freq {8} >>\"{9}\"".format(gdFilepath, dataset, arch, loss, gd_lr, epoch, acc_goal, neigs, gd_eig_freq, logFilepath))
-							os.system("ECHO python \"{0}\" {1} {2} {3} {4} {5} --acc_goal {6} --neigs {7} --eig_freq {8} >>\"{9}\"".format(gdFilepath, dataset, arch, loss, gd_lr, epoch, acc_goal, neigs, gd_eig_freq, logFilepath))
-							os.system("python \"{0}\" {1} {2} {3} {4} {5} --acc_goal {6} --neigs {7} --eig_freq {8} >>\"{9}\"".format(gdFilepath, dataset, arch, loss, gd_lr, epoch, acc_goal, neigs, gd_eig_freq, logFilepath))
+							print("python \"{0}\" {1} {2} {3} {4} {5} --acc_goal {6} --neigs {7} --eig_freq {8} >>\"{9}\"".format(gdFilepath, "{0} \"{1}\" \"{2}\"".format(dataset, train_path, test_path) if mal else dataset, arch, loss, gd_lr, epoch, acc_goal, neigs, gd_eig_freq, logFilepath))
+							os.system("ECHO python \"{0}\" {1} {2} {3} {4} {5} --acc_goal {6} --neigs {7} --eig_freq {8} >>\"{9}\"".format(gdFilepath, "{0} \"{1}\" \"{2}\"".format(dataset, train_path, test_path) if mal else dataset, arch, loss, gd_lr, epoch, acc_goal, neigs, gd_eig_freq, logFilepath))
+							os.system("python \"{0}\" {1} {2} {3} {4} {5} --acc_goal {6} --neigs {7} --eig_freq {8} >>\"{9}\"".format(gdFilepath, "{0} \"{1}\" \"{2}\"".format(dataset, train_path, test_path) if mal else dataset, arch, loss, gd_lr, epoch, acc_goal, neigs, gd_eig_freq, logFilepath))
 						else:
-							print("python \"{0}\" {1} {2} {3} {4} {5} --acc_goal {6} --neigs {7} --eig_freq {8}".format(gdFilepath, dataset, arch, loss, gd_lr, epoch, acc_goal, neigs, gd_eig_freq))
-							os.system("python \"{0}\" {1} {2} {3} {4} {5} --acc_goal {6} --neigs {7} --eig_freq {8}".format(gdFilepath, dataset, arch, loss, gd_lr, epoch, acc_goal, neigs, gd_eig_freq))
+							print("python \"{0}\" {1} {2} {3} {4} {5} --acc_goal {6} --neigs {7} --eig_freq {8}".format(gdFilepath, "{0} \"{1}\" \"{2}\"".format(dataset, train_path, test_path) if mal else dataset, arch, loss, gd_lr, epoch, acc_goal, neigs, gd_eig_freq))
+							os.system("python \"{0}\" {1} {2} {3} {4} {5} --acc_goal {6} --neigs {7} --eig_freq {8}".format(gdFilepath, "{0} \"{1}\" \"{2}\"".format(dataset, train_path, test_path) if mal else dataset, arch, loss, gd_lr, epoch, acc_goal, neigs, gd_eig_freq))
 					if os.path.isdir(gd_directory):
 						draw(gd_directory, gd_lr, gd_eig_freq)
 	epoch = 1000
